@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <?!= include('Stylesheet'); ?>
+</head>
+<body>
+    <h3 class="titulo-painel"><?!= include('ComponenteBotaoVoltar'); ?> Orçamento Judicial</h3>
+ <script> 
+  const DADOS_PARA_CLIENTE = <?!= JSON.stringify({ mensagens: MENSAGENS, status: CONFIG.STATUS }) ?>;
+</script>
+    <div class="seletor-header">
+        <label for="seletorPaciente">Selecione o Paciente:</label>
+        <button id="btnAtualizar" title="Atualizar lista de pacientes"></button>
+    </div>
+    <select id="seletorPaciente"><option value="">-- Escolha um paciente --</option></select>
+    <button id="btnNovoPaciente">Novo Paciente</button>
+
+    <div id="detalhesPaciente" class="painel" style="display: none; min-height: 50px;"></div>
+   <div id="painel-confirmacao-salvar" class="painel" style="display: none;"><p>📝 Itens salvos! Para mais edições, utilize a aba Calculadora.</p></div>
+
+    <hr>
+    <button id="btnGerarOrcamento" disabled>Gerar Orçamento</button>
+    <div id="status"><div class="loader" id="loader"></div><p id="mensagem"></p></div>
+
+    <dialog id="modal-opcoes-orcamento">
+        <h4>Orçamento Existente</h4>
+        <p>Este paciente já possui um orçamento. O que deseja fazer?</p>
+        <div class="input-group"><button id="btnOpcaoCarregar">Carregar Anterior</button><button id="btnOpcaoNovo" style="background-color:#6c757d;">Criar um Novo</button></div>
+    </dialog>
+
+    <dialog id="modal-adicionar-mais">
+        <h4>Orçamento Carregado</h4>
+        <p>Deseja adicionar mais medicamentos ao orçamento carregado?</p>
+        <div class="input-group"><button id="btnAdicionarSim">Sim, adicionar</button><button id="btnAdicionarNao" style="background-color:#6c757d;">Não, usar este</button></div>
+    </dialog>
+
+    <dialog id="modal-calculadora">
+        <h4>Adicionar Itens</h4>
+        <div id="medicamento-rows"></div>
+        <button id="btnAddMedicamento" style="margin-top: 15px;">Novo Item</button>
+        <div class="input-group" style="margin-top: 15px;">
+            <button id="btnSalvarCalculadora">Salvar Itens</button>
+            <form method="dialog" style="width: 100%;"><button style="background-color:#6c757d; width: 100%;">Cancelar</button></form>
+        </div>
+        <div id="modal-calc-status" style="margin-top: 15px; text-align: center;"><p id="modal-calc-mensagem"></p></div>
+    </dialog>
+
+    <dialog id="modal-novo-paciente">
+        <h4>Cadastrar Novo Paciente</h4>
+        <div class="input-com-icone" style="margin-bottom:8px;"><span class="icone">👤</span><input type="text" id="novo-nome" placeholder="Nome completo"></div>
+        <div class="input-com-icone"><span class="icone">🆔</span><input type="text" id="novo-cpf" maxlength="14" oninput="mascaraCPF(this)" placeholder="CPF (Opcional)"></div>
+        <div class="input-group" style="margin-top:15px;">
+          <button id="btnSalvarNovoPaciente">Salvar</button>
+          <form method="dialog" style="width: 100%;"><button style="background-color:#6c757d; width: 100%;">Cancelar</button></form>
+        </div>
+        <div id="modal-status" style="margin-top: 15px; text-align: center;"><p id="modal-mensagem"></p></div>
+    </dialog>
+
+    <template id="template-medicamento-row">
+        <div class="medicamento-row">
+            <button class="remover-item-icone" title="Remover este item">×</button>
+            <div class="input-com-icone" style="margin-bottom: 8px;"><span class="icone">💊</span><input type="text" placeholder="Medicamento" class="med-nome"></div>
+            <div class="input-com-icone" style="margin-bottom: 8px;"><span class="icone">🧪</span><input type="text" placeholder="Princípio Ativo" class="med-principio"></div>
+            <div class="input-com-icone" style="margin-bottom: 8px;"><span class="icone">💰</span><input type="text" placeholder="Valor Unitário" class="med-valor" onblur="formatarMoedaInput(this)"></div>
+            <div class="input-com-icone" style="margin-bottom: 8px;"><span class="icone">📅</span><input type="number" placeholder="Qtd. / Mês" class="med-qtd" min="1" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>
+            <div class="input-com-icone"><span class="icone">⏳</span><input type="number" placeholder="Duração (Meses)" class="med-duracao" min="1" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>
+        </div>
+    </template>
+
+    <script>const DADOS_PARA_CLIENTE = getDadosParaCliente() ;</script>
+    <?!=include('JavaScript_Utils'); ?>;
+    <?!=include('SidebarOrcamentoJavaScript');?>
+</body>
+</html>

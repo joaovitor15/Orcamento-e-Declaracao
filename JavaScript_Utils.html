@@ -1,0 +1,96 @@
+<script>
+  function setLoading(isLoading, msg = "", tipo = "info") {
+    const msgEl = document.getElementById("mensagem");
+    const loaderEl = document.getElementById("loader");
+
+    if (loaderEl) loaderEl.style.display = isLoading ? 'block' : 'none';
+    if (msgEl) {
+        msgEl.innerText = msg;
+        msgEl.className = msg ? 'status-' + tipo : '';
+    }
+
+    // 1. Habilita/Desabilita TUDO com base no estado de loading
+    document.querySelectorAll('button, input, select').forEach(el => el.disabled = isLoading);
+    
+    // 2. Lógica para RE-DESABILITAR botões específicos quando o loading termina
+    if (!isLoading) {
+        const seletor = document.getElementById('seletorPaciente');
+        const pacSelecionado = seletor ? !!seletor.value : false;
+        
+        const btnGerarOrcamento = document.getElementById('btnGerarOrcamento');
+        if(btnGerarOrcamento) {
+            const calcVisivel = document.getElementById('calculadora-rapida') && document.getElementById('calculadora-rapida').style.display === 'block';
+            // ADIÇÃO CRÍTICA: Lógica de painel de opções visível (do erro anterior)
+            const opcoesVisiveis = document.getElementById('opcoes-orcamento') && document.getElementById('opcoes-orcamento').style.display === 'block';
+            
+            // O botão fica desabilitado se:
+            // - Não há paciente OU calculadora está visível OU painel de opções está visível
+            btnGerarOrcamento.disabled = !pacSelecionado || calcVisivel || opcoesVisiveis;
+        }
+        
+        const btnGerarDeclaracao = document.getElementById('btnGerarDeclaracao');
+        if(btnGerarDeclaracao) {
+            // DESABILITA se não há paciente.
+            btnGerarDeclaracao.disabled = !pacSelecionado;
+        }
+    }
+  }
+
+  function onError(error) {
+    // Para nos ajudar a depurar, isso registrará o erro completo no console
+    console.error("Detalhes do erro do servidor:", error);
+
+    // Cria uma mensagem segura, tratando diferentes tipos de erro
+    let mensagem = "Ocorreu um erro desconhecido no servidor."; // Mensagem padrão
+    if (error && error.message) {
+      mensagem = error.message;
+    } else if (typeof error === 'string') {
+      mensagem = error;
+    }
+
+    setLoading(false, `Erro: ${mensagem}`, 'erro');
+  }
+
+  function mascaraCPF(input) {
+    let v = input.value.replace(/\D/g, '').slice(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    input.value = v;
+  }
+  
+function mascaraCPF(input) {
+    let v = input.value.replace(/\D/g, '').slice(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    input.value = v;
+  }
+  
+  function formatarMoedaInput(el) {
+    if (!el.value) return;
+
+    // 1. Mantém apenas os dígitos e a primeira vírgula que encontrar.
+    let v = el.value.replace(/[^\d,]/g, "").replace(/,(?=.*,)/g, "");
+    
+    // 2. Troca a vírgula por ponto para o JavaScript entender como número.
+    v = v.replace(',', '.');
+
+    const numero = parseFloat(v);
+
+    // 3. Se o resultado não for um número válido, limpa o campo.
+    if (isNaN(numero)) {
+      el.value = '';
+      return;
+    }
+
+    // 4. Formata o número para o padrão brasileiro (ex: "1.234,56").
+    const formatador = new Intl.NumberFormat('pt-BR', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    el.value = formatador.format(numero);
+  }
+</script>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <?!= include('Stylesheet'); ?>
+</head>
+<body>
+    <h3 class="titulo-painel"><?!= include('ComponenteBotaoVoltar'); ?> Painel de Declaração</h3>
+    <script> 
+  const DADOS_PARA_CLIENTE = <?!= JSON.stringify({ mensagens: MENSAGENS, status: CONFIG.STATUS }) ?>;
+</script>
+    <div class="seletor-header">
+        <label for="seletorPaciente">Selecione o Paciente:</label>
+        <button id="btnAtualizar" title="Atualizar lista de pacientes"></button>
+    </div>
+    <select id="seletorPaciente"><option value="">-- Escolha um paciente --</option></select>
+    <button id="btnNovoPaciente">Novo Paciente</button>
+    
+    <dialog id="modal-novo-paciente-declaracao">
+        <h4>Cadastrar Novo para Declaração</h4>
+        <div class="input-com-icone" style="margin-bottom:8px;"><span class="icone">👤</span><input type="text" id="novo-nome" placeholder="Nome completo"></div>
+        <div class="input-com-icone" style="margin-bottom:8px;"><span class="icone">🆔</span><input type="text" id="novo-cpf" maxlength="14" oninput="mascaraCPF(this)" placeholder="CPF (Opcional)"></div>
+        <div class="input-com-icone"><span class="icone">💰</span><input type="text" id="novo-valor" placeholder="ex: 125,50" onblur="formatarMoedaInput(this)"></div>
+        <div class="input-group" style="margin-top:15px;">
+          <button id="btnSalvarNovoPaciente">Salvar</button>
+          <form method="dialog" style="width: 100%;"><button style="background-color:#6c757d; width: 100%;">Cancelar</button></form>
+        </div>
+        <div id="modal-status" style="margin-top: 15px; text-align: center;"><p id="modal-mensagem"></p></div>
+    </dialog>
+
+    <div id="detalhesPaciente" class="painel" style="display: none; min-height: 50px;"></div>
+    <hr>
+    <button id="btnGerarDeclaracao" disabled>Gerar Declaração</button>
+    <div id="status"><div class="loader" id="loader"></div><p id="mensagem"></p></div>
+
+    <dialog id="modal-confirmacao-declaracao">
+        <h4>Atenção</h4>
+        <p id="confirmacao-declaracao-texto"></p>
+        <div class="input-group">
+            <button id="btn-confirmar-gerar-declaracao" style="background-color: var(--cor-aviso);">Sim, gerar nova via</button>
+            <form method="dialog" style="width: 100%;"><button style="background-color:#6c757d; width: 100%;">Cancelar</button></form>
+        </div>
+    </dialog>
+
+    <?!= include('SidebarDeclaracaoJavaScript'); ?>
+    <?!= include('JavaScript_Utils'); ?>
+</body>
+</html>

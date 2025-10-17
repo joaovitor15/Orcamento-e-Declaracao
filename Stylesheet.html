@@ -1,0 +1,363 @@
+<style>
+/* ================================================================== */
+/* ARQUIVO DE ESTILOS CENTRALIZADO - PROJETO ORÇAMENTOS (VERSÃO FINAL) */
+/* Estrutura:                                                       */
+/* 1. Variáveis Globais e Resets (Cores, Fontes, Estilos Base)      */
+/* 2. Estilos Gerais de Tags (h3, label, button, input...)          */
+/* 3. Layout e Estrutura Principal (.container, .painel)            */
+/* 4. Componentes Específicos (Botões, Formulários, Mensagens...)   */
+/* 5. Estilos dos Modais (Dialog)                                   */
+/* 6. Estilos da Calculadora (Dentro do Modal)                      */
+/* 7. Animações                                                     */
+/* ================================================================== */
+
+
+/* ==== 1. VARIÁVEIS GLOBAIS E RESETS ==== */
+:root {
+  --cor-primaria: #4285F4;
+  --cor-sucesso: #34A853;
+  --cor-perigo: #EA4335;
+  --cor-aviso: #FBBC04;
+  --cor-fundo: #f8f9fa;
+  --cor-painel: #ffffff;
+  --cor-texto: #3c4043;
+  --cor-borda: #dadce0;
+  --sombra-padrao: 0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15);
+}
+
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-size: 14px;
+}
+
+
+/* ==== 2. ESTILOS GERAIS DE TAGS (Base) ==== */
+h3, h4 {
+  margin-top: 0;
+  border-bottom: 1px solid var(--cor-borda);
+  padding-bottom: 8px;
+}
+
+h3 {
+  color: black;
+  display: flex;
+  align-items: center;
+}
+
+h4 {
+  color: var(--cor-primaria);
+}
+
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 4px;
+  font-size: 0.9em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--cor-borda);
+  margin: 24px 0;
+}
+
+
+/* ==== 3. LAYOUT E ESTRUTURA PRINCIPAL ==== */
+.container {
+  padding: 16px;
+}
+
+.painel {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: var(--cor-painel);
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  box-shadow: var(--sombra-padrao);
+}
+
+
+/* ==== 4. COMPONENTES ESPECÍFICOS ==== */
+
+/* ----- Componente: Títulos e Descrições ----- */
+h3.titulo-painel {
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+}
+
+.descricao-painel {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* ----- Componente: Formulários (Inputs, Selects, Grupos) ----- */
+button, input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 20px;
+  border: 1px solid var(--cor-borda);
+  box-sizing: border-box;
+  font-size: 1em;
+  transition: box-shadow 0.2s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.input-com-icone {
+  position: relative;
+}
+
+.input-com-icone .icone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e9ecef;
+  border-right: 1px solid var(--cor-borda);
+  border-radius: 20px 0 0 20px;
+  color: #5f6368;
+}
+
+.input-com-icone input {
+  padding-left: 50px;
+}
+
+/* ----- Componente: Seletor de Paciente ----- */
+.seletor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.seletor-header label {
+  margin-top: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+select#seletorPaciente {
+  padding-right: 30px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%233c4043' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+}
+
+/* ----- Componente: Botões ----- */
+button {
+  background-color: var(--cor-primaria);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: var(--sombra-padrao);
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+#btnGerarOrcamento, #btnGerarDeclaracao {
+  margin-top: 20px;
+  padding: 12px;
+  font-size: 1.1em;
+}
+
+#btnNovoPaciente, #btnSalvarNovoPaciente, #btnSalvarCalculadora {
+  background-color: var(--cor-sucesso);
+}
+
+#btn-declaracao {
+  background-color: #00CED1;
+}
+
+#btnVoltar {
+  background-color: #EFEBE9;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#btnVoltar:hover { background-color: #D7CCC8; }
+#btnVoltar svg { width: 20px; height: 20px; fill: black; }
+
+#btnAtualizar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.4s ease, box-shadow 0.2s ease;
+  background: #90CAF9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E") no-repeat center;
+  background-size: 60%;
+}
+#btnAtualizar:hover {
+  box-shadow: var(--sombra-padrao);
+  transform: rotate(360deg);
+}
+
+/* ----- Componente: Painéis de Status e Mensagens ----- */
+#mensagem, #modal-mensagem, #modal-calc-mensagem {
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-align: center;
+  word-wrap: break-word;
+  min-height: 20px;
+}
+
+.status-sucesso { background-color: #e6f4ea; color: var(--cor-sucesso); }
+.status-erro { background-color: #fce8e6; color: var(--cor-perigo); }
+.status-info { background-color: #e8f0fe; color: var(--cor-primaria); }
+
+#detalhesPaciente {
+  background-color: #f1f3f4;
+  border-left: 4px solid #80868b;
+  padding: 12px;
+}
+
+#painel-confirmacao-salvar {
+  background-color: #e6f4ea !important; /* Fundo verde claro (sucesso) */
+  border-left: 4px solid var(--cor-sucesso) !important; /* Borda lateral verde */
+  color: var(--cor-texto) !important;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #d0e7d6; /* Borda geral com tom de verde */
+}
+
+/* ==== 5. ESTILOS DOS MODAIS (Dialog) ==== */
+dialog {
+  padding: 20px;
+  width: 85%;
+  margin: auto;
+  background-color: #f0f4ff; /* Cor azul padrão para os modais */
+  border: none;
+  border-left: 5px solid var(--cor-primaria);
+  border-radius: 8px;
+  box-shadow: var(--sombra-padrao);
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+dialog h4 {
+  margin-top: 0;
+  text-align: center;
+}
+
+dialog p {
+  text-align: center;
+  font-weight: 500;
+}
+
+
+/* ==== 6. ESTILOS DA CALCULADORA (Dentro do Modal) ==== */
+
+/* Regra ESPECÍFICA para o fundo do modal da calculadora: azul mais claro */
+#modal-calculadora {
+  background-color: #e8f0fe;
+}
+
+/* Regra para as fileiras de medicamento: fundo transparente e linha divisória */
+#modal-calculadora .medicamento-row {
+  
+  padding: 16px 0;
+  position: relative;
+  /* Removemos a cor de fundo e o estilo de card daqui */
+}
+
+/* Regra GERAL para os botões "X" (2º, 3º, etc.) */
+#modal-calculadora .remover-item-icone {
+  position: absolute;
+  top: -10px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: var(--cor-perigo) !important;
+  border-radius: 50% !important;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Regra ESPECIAL para o PRIMEIRO "X" */
+#modal-calculadora .remover-item-icone.primeiro-item {
+  top: -15px;
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
+}
+
+
+/* ==== 7. ANIMAÇÕES ==== */
+.loader {
+  border: 4px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 4px solid var(--cor-primaria);
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  display: none;
+  margin: 10px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+#modal-opcoes-orcamento, #modal-adicionar-mais {
+  background-color: #fffde7; /* Amarelo bem claro */
+  border-left-color: var(--cor-aviso); /* Borda lateral amarela para combinar */
+}
+#modal-confirmacao-declaracao {
+  background-color: #fffde7; /* Amarelo sutil de aviso */
+  border-left-color: var(--cor-aviso);
+}
+</style>

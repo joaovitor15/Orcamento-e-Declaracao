@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('Stylesheet'); ?>
+  </head>
+  <body>
+    <div class="container">
+      <script>
+        // Use a função auxiliar para injetar os dados de forma segura
+        const DADOS_PARA_CLIENTE = <?!= getDadosParaCliente() ?>; 
+      </script>
+      
+      <h3 class="titulo-painel">Menu Principal</h3>
+      
+      <p class="descricao-painel">Selecione o que deseja fazer?</p>
+      
+      <button id="btn-orcamento">Gerar Orçamento Judicial</button>
+      <button id="btn-declaracao">Gerar Declaração</button>
+      
+      <div id="status" style="margin-top:20px;"><div class="loader" id="loader"></div><p id="mensagem"></p></div>
+    </div>
+
+    <?!= include('JavaScript_Utils'); ?>
+
+    <script>
+      window.addEventListener("load", function() { setLoading(false); });
+      function onSidebarShowSuccess() { setLoading(false, '', 'info'); }
+      document.getElementById("btn-orcamento").addEventListener("click", function() { setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.ABRINDO_PAINEL); google.script.run.withFailureHandler(onError).withSuccessHandler(onSidebarShowSuccess).mostrarSidebarOrcamento(); });
+      document.getElementById("btn-declaracao").addEventListener("click", function() { setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.ABRINDO_PAINEL); google.script.run.withFailureHandler(onError).withSuccessHandler(onSidebarShowSuccess).mostrarSidebarDeclaracao(); });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,286 @@
+<script>
+  let modoSalvar = 'sobrescrever';
+
+  // --- REFERÊNCIAS AOS MODAIS ---
+  const modalNovoPaciente = document.getElementById('modal-novo-paciente');
+  const modalOpcoes = document.getElementById('modal-opcoes-orcamento');
+  const modalAdicionarMais = document.getElementById('modal-adicionar-mais');
+  const modalCalculadora = document.getElementById('modal-calculadora');
+
+  // --- EVENT LISTENERS ---
+  document.addEventListener("DOMContentLoaded", carregarPacientes);
+  document.getElementById("btnAtualizar").addEventListener("click", resetarParaTelaInicial);
+  document.getElementById("seletorPaciente").addEventListener("change", onPacienteChange);
+  document.getElementById("btnGerarOrcamento").addEventListener("click", onGerarClick);
+
+  // Eventos do modal Novo Paciente
+  document.getElementById("btnNovoPaciente").addEventListener("click", () => {
+    document.getElementById('novo-nome').value = '';
+    document.getElementById('novo-cpf').value = '';
+    document.getElementById('modal-mensagem').innerText = '';
+    modalNovoPaciente.showModal();
+  });
+  document.getElementById("btnSalvarNovoPaciente").addEventListener("click", onSalvarNovoPaciente);
+
+  // Eventos dos modais da Calculadora
+  document.getElementById("btnOpcaoCarregar").addEventListener("click", onCarregarHistoricoClick);
+  document.getElementById("btnOpcaoNovo").addEventListener("click", onCriarNovoClick);
+  document.getElementById("btnAdicionarSim").addEventListener("click", onAdicionarSimClick);
+  document.getElementById("btnAdicionarNao").addEventListener("click", onAdicionarNaoClick);
+  document.getElementById("btnAddMedicamento").addEventListener("click", adicionarLinhaMedicamento);
+  document.getElementById("btnSalvarCalculadora").addEventListener("click", salvarItensDaSidebar);
+
+
+  // --- FUNÇÕES ---
+
+  function onSalvarNovoPaciente() {
+    const nome = document.getElementById('novo-nome').value.trim();
+    const cpf = document.getElementById('novo-cpf').value;
+    
+    if (!nome) {
+      google.script.run.mostrarAlerta(
+        DADOS_PARA_CLIENTE.mensagens.VALIDACAO.NOME_OBRIGATORIO, 
+        DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO
+      );
+      return;
+    }
+
+    const btnSalvar = document.getElementById('btnSalvarNovoPaciente');
+    const mensagemEl = document.getElementById('modal-mensagem');
+
+    btnSalvar.disabled = true;
+    mensagemEl.className = 'status-info';
+    mensagemEl.innerText = DADOS_PARA_CLIENTE.mensagens.UI.SALVANDO;
+
+    google.script.run
+      .withSuccessHandler(resultado => { // A lógica agora fica toda no SuccessHandler
+        btnSalvar.disabled = false;
+        mensagemEl.innerText = '';
+
+        if (resultado.status === 'DUPLICADO') {
+          // Se for duplicado, mostra o pop-up de alerta
+          google.script.run.mostrarAlerta(resultado.message, DADOS_PARA_CLIENTE.mensagens.TITULOS.AVISO);
+
+        } else if (resultado.status === 'SUCESSO') {
+          // Se for sucesso, executa a lógica original de fechar e atualizar
+          const novoPaciente = resultado.data;
+          modalNovoPaciente.close();
+          const seletor = document.getElementById('seletorPaciente');
+          seletor.add(new Option(novoPaciente.nome, novoPaciente.linha));
+          seletor.value = novoPaciente.linha;
+          onPacienteChange();
+        }
+      })
+      .withFailureHandler(error => {
+        // O FailureHandler agora só lida com erros inesperados
+        btnSalvar.disabled = false;
+        mensagemEl.className = 'status-erro';
+        mensagemEl.innerText = `Erro: ${error.message}`;
+      })
+      .adicionarNovoPaciente(nome, cpf);
+  }
+
+  function onPacienteChange() {
+    const linha = document.getElementById("seletorPaciente").value;
+    google.script.run.limparCalculadoraSilenciosamente();
+    document.getElementById("btnNovoPaciente").style.display = linha ? 'none' : 'block';
+    document.getElementById("detalhesPaciente").style.display = linha ? 'block' : 'none';
+    document.getElementById('painel-confirmacao-salvar').style.display = 'none';
+
+    if (!linha) {
+      document.getElementById("btnGerarOrcamento").disabled = true;
+      setLoading(false);
+      return;
+    }
+    setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.CARREGANDO, 'info');
+    google.script.run.withSuccessHandler(mostrarDetalhes).withFailureHandler(onError).getDetalhesPaciente(linha);
+  }
+
+  function mostrarDetalhes(detalhes) {
+    setLoading(false);
+    document.getElementById("detalhesPaciente").innerHTML = `<p style="margin:0;"><strong>CPF:</strong> ${detalhes.cpf || 'Não informado'}<br><strong>Status:</strong> ${detalhes.status || DADOS_PARA_CLIENTE.status.PENDENTE}</p>`;
+    const statusGerado = DADOS_PARA_CLIENTE.status.GERADO;
+    const statusArquivado = DADOS_PARA_CLIENTE.status.ARQUIVADO;
+
+    if (detalhes.status === statusGerado || detalhes.status === statusArquivado) {
+      modalOpcoes.showModal();
+      document.getElementById('btnGerarOrcamento').disabled = true;
+    } else {
+      onCriarNovoClick();
+    }
+  }
+
+  function onCriarNovoClick() {
+    modoSalvar = 'sobrescrever';
+    if (modalOpcoes.open) modalOpcoes.close();
+    document.getElementById('medicamento-rows').innerHTML = '';
+    adicionarLinhaMedicamento();
+    modalCalculadora.showModal();
+  }
+
+  function onCarregarHistoricoClick() {
+    const linha = document.getElementById("seletorPaciente").value;
+    setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.CARREGANDO, 'info');
+    modalOpcoes.close();
+    google.script.run.withSuccessHandler(resultado => {
+      setLoading(false);
+      if (resultado.success) {
+        modalAdicionarMais.showModal();
+      } else {
+        setLoading(false, resultado.message, 'info');
+        onCriarNovoClick();
+      }
+    }).withFailureHandler(onError).carregarHistoricoParaCalculadora(linha);
+  }
+
+  function onAdicionarSimClick() {
+    modoSalvar = 'adicionar';
+    modalAdicionarMais.close();
+    document.getElementById('medicamento-rows').innerHTML = '';
+    adicionarLinhaMedicamento();
+    modalCalculadora.showModal();
+  }
+
+  function onAdicionarNaoClick() {
+    modalAdicionarMais.close();
+    onConfirmacaoSalvar(DADOS_PARA_CLIENTE.mensagens.UI.ORCAMENTO_ANTERIOR_CARREGADO);
+  }
+
+  function onConfirmacaoSalvar(resultado) {
+      if (typeof resultado === 'object' && resultado.status === 'cancelado') {
+        setLoading(false, resultado.message, 'info');
+      } else {
+        setLoading(false, resultado, 'sucesso');
+        document.getElementById('painel-confirmacao-salvar').style.display = 'block';
+        document.getElementById('btnGerarOrcamento').disabled = false;
+      }
+  }
+
+  function salvarItensDaSidebar() {
+    const rows = document.querySelectorAll('.medicamento-row');
+    const itens = [];
+    let precisaConfirmar = false;
+    for (const row of rows) {
+      const nome = row.querySelector('.med-nome').value.trim();
+      const valor = row.querySelector('.med-valor').value.trim();
+      if (!nome && !valor) continue;
+      if (!nome) { return google.script.run.mostrarAlerta(DADOS_PARA_CLIENTE.mensagens.CALCULADORA.VALIDACAO.NOME_ITEM_OBRIGATORIO, "Campo Obrigatório"); }
+      if (!valor) { return google.script.run.mostrarAlerta(DADOS_PARA_CLIENTE.mensagens.CALCULADORA.VALIDACAO.VALOR_ITEM_OBRIGATORIO, DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO); }
+      const qtd = row.querySelector('.med-qtd').value;
+      const duracao = row.querySelector('.med-duracao').value;
+      if (!qtd || !duracao) precisaConfirmar = true;
+      itens.push({ nome, valor, qtd: qtd || '1', duracao: duracao || '1', principio: row.querySelector('.med-principio').value });
+    }
+    
+    // CORREÇÃO APLICADA AQUI:
+    // A palavra "CALCULADORA" estava com "a" minúsculo, o que causava o erro.
+    if (itens.length === 0) { 
+        return google.script.run.mostrarAlerta(
+            DADOS_PARA_CLIENTE.mensagens.CALCULADORA.VALIDACAO.ITENS_NAO_ADICIONADOS, 
+            DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO
+        ); 
+    }
+
+    const funcaoSalvar = (modoSalvar === 'adicionar') ? 'appendDadosCalculadora' : 'salvarDadosCalculadora';
+    const btnSalvar = document.getElementById('btnSalvarCalculadora');
+    const msgEl = document.getElementById('modal-calc-mensagem');
+    btnSalvar.disabled = true;
+    msgEl.className = 'status-info';
+    msgEl.innerText = DADOS_PARA_CLIENTE.mensagens.UI.PROCESSANDO;
+
+    const onComplete = (resultado) => {
+      btnSalvar.disabled = false;
+      msgEl.innerText = '';
+      modalCalculadora.close();
+      onConfirmacaoSalvar(resultado);
+    };
+
+    if (precisaConfirmar) {
+      google.script.run.withSuccessHandler(onComplete).withFailureHandler(onError).mostrarDialogoConfirmacao(itens, funcaoSalvar);
+    } else {
+      google.script.run.withSuccessHandler(onComplete).withFailureHandler(onError)[funcaoSalvar](itens);
+    }
+  }
+
+  function resetarParaTelaInicial() {
+    document.getElementById('seletorPaciente').value = '';
+    document.getElementById("detalhesPaciente").style.display = 'none';
+    document.getElementById("btnNovoPaciente").style.display = 'block';
+    document.getElementById('btnGerarOrcamento').disabled = true;
+    document.getElementById('painel-confirmacao-salvar').style.display = 'none';
+    carregarPacientes();
+  }
+
+  function onGerarClick() {
+    const linha = document.getElementById("seletorPaciente").value;
+    if (!linha) return;
+    setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.GERANDO_PDF, 'info');
+    google.script.run.withSuccessHandler(onGeracaoSuccess).withFailureHandler(onError).gerarOrcamentoFinal(linha);
+  }
+
+  function carregarPacientes() {
+    setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.CARREGANDO, 'info');
+    google.script.run.withSuccessHandler(popularPacientes).withFailureHandler(onError).getPacientes();
+  }
+
+  function popularPacientes(pacientes) {
+    const seletor = document.getElementById("seletorPaciente");
+    const valorSelecionado = seletor.value;
+    seletor.innerHTML = '<option value="">-- Escolha um paciente --</option>';
+    pacientes.forEach(p => seletor.add(new Option(p.nome, p.linha)));
+    seletor.value = valorSelecionado;
+    onPacienteChange();
+  }
+
+  function onGeracaoSuccess(resultado) {
+  // NOVA LÓGICA: Verifica se o servidor mandou a instrução para abrir a calculadora
+  if (resultado && resultado.status === 'CALCULADORA_VAZIA') {
+    // Se a calculadora estiver vazia:
+    // 1. Mostra um aviso rápido para o usuário.
+    setLoading(false, `Aviso: ${resultado.message}`, 'aviso');
+    
+    // 2. Abre o modal da calculadora para o usuário adicionar os itens.
+    // Reutilizamos a função onCriarNovoClick que já faz isso.
+    setTimeout(() => {
+        onCriarNovoClick();
+        setLoading(false); // Limpa a mensagem de aviso
+    }, 1500); // Um pequeno delay para o usuário ler a mensagem
+    
+    return; // Para a execução aqui
+  }
+
+  // Se não for o caso acima, o fluxo de sucesso continua como antes.
+  setLoading(false, resultado.message, 'sucesso');
+  if (resultado.pdfUrl) {
+    window.open(resultado.pdfUrl, '_blank');
+  }
+  document.getElementById('seletorPaciente').value = '';
+  setTimeout(resetarParaTelaInicial, 2000);
+}
+
+// Nova versão mais inteligente
+function adicionarLinhaMedicamento() {
+  const container = document.getElementById("medicamento-rows");
+  const template = document.getElementById("template-medicamento-row");
+  const clone = template.content.cloneNode(true);
+  const removerBotao = clone.querySelector('.remover-item-icone');
+
+  // Lógica para marcar o primeiro item
+  const isFirstItem = container.children.length === 0;
+  if (isFirstItem) {
+    removerBotao.classList.add('primeiro-item'); // Adiciona a classe especial
+  }
+
+  removerBotao.onclick = (e) => e.target.closest('.medicamento-row').remove();
+  container.appendChild(clone);
+}
+
+  const btnVoltar = document.getElementById("btnVoltar");
+  if (btnVoltar) {
+    btnVoltar.addEventListener("click", function(e) {
+      e.preventDefault();
+      setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.VOLTANDO);
+      google.script.run.withFailureHandler(onError).mostrarMenuPrincipal();
+    });
+  }
+</script>

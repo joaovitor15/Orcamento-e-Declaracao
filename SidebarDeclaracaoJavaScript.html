@@ -1,0 +1,158 @@
+<script>
+  const modalNovoPaciente = document.getElementById('modal-novo-paciente-declaracao');
+  const modalConfirmacaoDeclaracao = document.getElementById('modal-confirmacao-declaracao');
+  let linhaParaGerar = null; // Variável para guardar a linha selecionada
+
+  // --- EVENT LISTENERS ---
+  document.addEventListener("DOMContentLoaded", carregarPacientes);
+  document.getElementById("btnAtualizar").addEventListener("click", resetarParaTelaInicial);
+  document.getElementById("seletorPaciente").addEventListener("change", onPacienteChange);
+  document.getElementById("btnGerarDeclaracao").addEventListener("click", onGerarClick);
+
+  document.getElementById("btnNovoPaciente").addEventListener("click", () => {
+    ['novo-nome', 'novo-cpf', 'novo-valor'].forEach(id => document.getElementById(id).value = '');
+    const modalMensagem = document.getElementById('modal-mensagem');
+    if (modalMensagem) modalMensagem.innerText = '';
+    modalNovoPaciente.showModal();
+  });
+  document.getElementById("btnSalvarNovoPaciente").addEventListener("click", onSalvarNovoPaciente);
+
+  // Evento do botão "Sim" do novo modal de confirmação
+  document.getElementById("btn-confirmar-gerar-declaracao").addEventListener("click", onConfirmarGerarDeclaracao);
+
+
+  // --- FUNÇÕES ---
+  
+  function proceedWithGeneration(linha) {
+    setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.GERANDO_PDF, 'info');
+    google.script.run.withSuccessHandler(onGeracaoSuccess).withFailureHandler(onError).forcarGerarDeclaracaoGasto(linha);
+  }
+
+  function onConfirmarGerarDeclaracao() {
+    modalConfirmacaoDeclaracao.close();
+    if (linhaParaGerar) {
+      proceedWithGeneration(linhaParaGerar);
+    }
+  }
+
+  function onGerarClick() {
+    linhaParaGerar = document.getElementById("seletorPaciente").value;
+    if (!linhaParaGerar) return;
+
+    setLoading(true, "Verificando status...", 'info');
+
+    google.script.run
+      .withSuccessHandler(status => {
+        if (status === DADOS_PARA_CLIENTE.status.GERADO) {
+          setLoading(false);
+          // Usa o novo modal em vez do 'confirm()'
+          document.getElementById('confirmacao-declaracao-texto').innerText = DADOS_PARA_CLIENTE.mensagens.DIALOGO.DECLARACAO_JA_GERADA;
+          modalConfirmacaoDeclaracao.showModal();
+        } else {
+          proceedWithGeneration(linhaParaGerar);
+        }
+      })
+      .withFailureHandler(onError)
+      .verificarStatusDeclaracao(linhaParaGerar);
+  }
+
+  function onSalvarNovoPaciente() {
+  const nome = document.getElementById('novo-nome').value;
+  const cpf = document.getElementById('novo-cpf').value;
+  const valor = document.getElementById('novo-valor').value;
+  
+  // --- NOVA VALIDAÇÃO ---
+  // 1. Verificamos os campos AQUI, na interface, antes de qualquer outra coisa.
+  if (!nome && !valor) {
+    // Se AMBOS estiverem vazios
+    google.script.run.mostrarAlerta(DADOS_PARA_CLIENTE.mensagens.VALIDACAO.NOME_E_VALOR_OBRIGATORIOS, DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO);
+    return; // Para a execução
+  }
+  if (!nome) {
+    // Se apenas o NOME estiver vazio
+    google.script.run.mostrarAlerta("O campo 'Nome' é obrigatório.", DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO);
+    return; // Para a execução
+  }
+  if (!valor) {
+    // Se apenas o VALOR estiver vazio
+    google.script.run.mostrarAlerta("O campo 'Valor' é obrigatório.", DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO);
+    return; // Para a execução
+  }
+  // --- FIM DA NOVA VALIDAÇÃO ---
+
+  // 2. Se a validação passar, o código de salvamento continua como antes.
+  const btnSalvar = document.getElementById('btnSalvarNovoPaciente');
+  const mensagemEl = document.getElementById('modal-mensagem');
+  btnSalvar.disabled = true;
+  mensagemEl.className = 'status-info';
+  mensagemEl.innerText = DADOS_PARA_CLIENTE.mensagens.UI.SALVANDO;
+
+  google.script.run
+    .withSuccessHandler(novoP => {
+      modalNovoPaciente.close();
+      btnSalvar.disabled = false;
+      const s = document.getElementById('seletorPaciente');
+      s.add(new Option(novoP.nome, novoP.linha));
+      s.value = novoP.linha;
+      onPacienteChange();
+    })
+    .withFailureHandler(error => {
+      mensagemEl.className = 'status-erro';
+      mensagemEl.innerText = `Erro: ${error.message}`;
+      btnSalvar.disabled = false;
+    })
+    .adicionarNovoPacienteDeclaracao(nome, cpf, valor);
+}
+  function resetarParaTelaInicial() {
+    document.getElementById('seletorPaciente').value = '';
+    document.getElementById("detalhesPaciente").style.display = 'none';
+    document.getElementById("btnNovoPaciente").style.display = 'block';
+    document.getElementById('btnGerarDeclaracao').disabled = true;
+    carregarPacientes();
+  }
+
+  function onPacienteChange() {
+    const linha = document.getElementById("seletorPaciente").value;
+    document.getElementById("btnNovoPaciente").style.display = linha ? 'none' : 'block';
+    document.getElementById("detalhesPaciente").style.display = linha ? 'block' : 'none';
+    if (!linha) {
+      document.getElementById("btnGerarDeclaracao").disabled = true;
+      setLoading(false); return;
+    }
+    document.getElementById('btnGerarDeclaracao').disabled = false;
+    setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.BUSCANDO, 'info');
+    google.script.run.withSuccessHandler(mostrarDetalhes).withFailureHandler(onError).getDetalhesPacienteDeclaracao(linha);
+  }
+
+  function mostrarDetalhes(d) {
+    setLoading(false);
+    document.getElementById("detalhesPaciente").innerHTML = `<p style="margin:0;"><strong>CPF:</strong> ${d.cpf||'N/A'}<br><strong>Valor:</strong> ${d.valor||'N/A'}<br><strong>Status:</strong> ${d.status||DADOS_PARA_CLIENTE.status.PENDENTE}</p>`;
+  }
+  
+  function carregarPacientes() {
+    setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.CARREGANDO, 'info');
+    google.script.run.withSuccessHandler(popularPacientes).withFailureHandler(onError).getPacientesDeclaracao();
+  }
+
+  function popularPacientes(pacientes) {
+    const seletor = document.getElementById("seletorPaciente");
+    seletor.innerHTML = '<option value="">-- Escolha um paciente --</option>';
+    pacientes.forEach(p => seletor.add(new Option(p.nome, p.linha)));
+    onPacienteChange();
+  }
+
+  function onGeracaoSuccess(resultado) {
+    setLoading(false, resultado.message, 'sucesso');
+    if(resultado.pdfUrl) window.open(resultado.pdfUrl, '_blank');
+    resetarParaTelaInicial();
+  }
+
+  const btnVoltar = document.getElementById("btnVoltar");
+  if (btnVoltar) {
+    btnVoltar.addEventListener("click", function(e) {
+      e.preventDefault();
+      setLoading(true, DADOS_PARA_CLIENTE.mensagens.UI.VOLTANDO);
+      google.script.run.withFailureHandler(onError).mostrarMenuPrincipal();
+    });
+  }
+</script>
