@@ -34,17 +34,21 @@
   // --- FUNÇÕES ---
 
   function onSalvarNovoPaciente() {
-    const nome = document.getElementById('novo-nome').value.trim();
+    const nome = document.getElementById('novo-nome').value;
     const cpf = document.getElementById('novo-cpf').value;
     
+    // --- NOVA VALIDAÇÃO (IGUAL À TELA DE DECLARAÇÃO) ---
+    // 1. Verificamos se o nome está vazio aqui no cliente.
     if (!nome) {
       google.script.run.mostrarAlerta(
         DADOS_PARA_CLIENTE.mensagens.VALIDACAO.NOME_OBRIGATORIO, 
         DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO
       );
-      return;
+      return; // Para a execução e não tenta salvar.
     }
+    // --- FIM DA NOVA VALIDAÇÃO ---
 
+    // 2. Se a validação passar, o código de salvamento continua.
     const btnSalvar = document.getElementById('btnSalvarNovoPaciente');
     const mensagemEl = document.getElementById('modal-mensagem');
 
@@ -53,29 +57,19 @@
     mensagemEl.innerText = DADOS_PARA_CLIENTE.mensagens.UI.SALVANDO;
 
     google.script.run
-      .withSuccessHandler(resultado => { // A lógica agora fica toda no SuccessHandler
-        btnSalvar.disabled = false;
+      .withSuccessHandler(novoPaciente => {
+        modalNovoPaciente.close();
         mensagemEl.innerText = '';
-
-        if (resultado.status === 'DUPLICADO') {
-          // Se for duplicado, mostra o pop-up de alerta
-          google.script.run.mostrarAlerta(resultado.message, DADOS_PARA_CLIENTE.mensagens.TITULOS.AVISO);
-
-        } else if (resultado.status === 'SUCESSO') {
-          // Se for sucesso, executa a lógica original de fechar e atualizar
-          const novoPaciente = resultado.data;
-          modalNovoPaciente.close();
-          const seletor = document.getElementById('seletorPaciente');
-          seletor.add(new Option(novoPaciente.nome, novoPaciente.linha));
-          seletor.value = novoPaciente.linha;
-          onPacienteChange();
-        }
+        btnSalvar.disabled = false;
+        const seletor = document.getElementById('seletorPaciente');
+        seletor.add(new Option(novoPaciente.nome, novoPaciente.linha));
+        seletor.value = novoPaciente.linha;
+        onPacienteChange();
       })
       .withFailureHandler(error => {
-        // O FailureHandler agora só lida com erros inesperados
-        btnSalvar.disabled = false;
         mensagemEl.className = 'status-erro';
         mensagemEl.innerText = `Erro: ${error.message}`;
+        btnSalvar.disabled = false;
       })
       .adicionarNovoPaciente(nome, cpf);
   }
@@ -171,15 +165,7 @@
       if (!qtd || !duracao) precisaConfirmar = true;
       itens.push({ nome, valor, qtd: qtd || '1', duracao: duracao || '1', principio: row.querySelector('.med-principio').value });
     }
-    
-    // CORREÇÃO APLICADA AQUI:
-    // A palavra "CALCULADORA" estava com "a" minúsculo, o que causava o erro.
-    if (itens.length === 0) { 
-        return google.script.run.mostrarAlerta(
-            DADOS_PARA_CLIENTE.mensagens.CALCULADORA.VALIDACAO.ITENS_NAO_ADICIONADOS, 
-            DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO
-        ); 
-    }
+    if (itens.length === 0) { return google.script.run.mostrarAlerta(DADOS_PARA_CLIENTE.mensagens.CALCULadora.VALIDACAO.ITENS_NAO_ADICIONADOS, DADOS_PARA_CLIENTE.mensagens.TITULOS.VALIDACAO); }
 
     const funcaoSalvar = (modoSalvar === 'adicionar') ? 'appendDadosCalculadora' : 'salvarDadosCalculadora';
     const btnSalvar = document.getElementById('btnSalvarCalculadora');

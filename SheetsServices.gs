@@ -32,31 +32,32 @@ function getDetalhesPaciente(linha) {
 
 function adicionarNovoPaciente(nome, cpf) {
   try {
+    if (!nome) {
+      // Validação para o campo nome
+      throw new Error(MENSAGENS.VALIDACAO.NOME_OBRIGATORIO);
+    }
+
+    // Pega o nome da aba a partir da configuração
     const nomeDaAba = CONFIG.PLANILHA.ABAS.GERACAO;
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nomeDaAba);
 
+    // Verifica se a aba realmente existe
     if (!sheet) {
-      throw new Error(`A aba "${nomeDaAba}" não foi encontrada.`);
+      throw new Error(`A aba "${nomeDaAba}" não foi encontrada. Verifique o nome da aba na planilha.`);
     }
 
-    const nomesExistentes = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues()
-                             .flat()
-                             .map(n => String(n).toLowerCase().trim());
-
-    if (nomesExistentes.includes(nome.toLowerCase().trim())) {
-      // 1. AVISO: Em vez de lançar um erro, retorna um objeto de status "DUPLICADO"
-      return { status: 'DUPLICADO', message: MENSAGENS.VALIDACAO.PACIENTE_JA_CADASTRADO(nome) };
-    }
-
+    // Adiciona uma nova linha com os dados do paciente
     sheet.appendRow([nome, formatarCPF(cpf)]);
     const novaLinha = sheet.getLastRow();
     
-    // 2. SUCESSO: Retorna um objeto de status "SUCESSO" com os dados do paciente
-    return { status: 'SUCESSO', data: { nome: nome, linha: novaLinha } };
+    // Log para depuração (visível em "Execuções" no Apps Script)
+    Logger.log(`Paciente "${nome}" adicionado com sucesso na linha ${novaLinha}.`);
+    return { nome: nome, linha: novaLinha }; // Retorna os dados em caso de sucesso
 
   } catch (e) {
-    // 3. ERRO REAL: Apenas erros inesperados (ex: planilha não encontrada) serão lançados
+    // Captura QUALQUER erro que acontecer no bloco 'try'
     Logger.log(`Erro em adicionarNovoPaciente: ${e.message}\n${e.stack}`);
+    // Lança um novo erro que será enviado para o modal
     throw new Error(`Falha ao salvar: ${e.message}`);
   }
 }

@@ -39,7 +39,7 @@ const MENSAGENS = {
   // 3. VALIDACAO (Geral)
   // =================================================================
   VALIDACAO: {
-    NOME_OBRIGATORIO: "O campo Nome é obrigatório.",
+    NOME_OBRIGATORIO: "O campo 'Nome' é obrigatório.",
     NOME_E_VALOR_OBRIGATORIOS: "Os campos Nome e Valor são obrigatórios.",
     SELECIONE_PACIENTE_VALIDO: "Selecione uma linha de paciente válida para continuar."
   },
@@ -75,7 +75,6 @@ const MENSAGENS = {
       ITENS_NAO_ADICIONADOS: "É necessário adicionar pelo menos um medicamento para continuar.",
       NOME_ITEM_OBRIGATORIO: "O nome do medicamento é obrigatório para este item.",
       VALOR_ITEM_OBRIGATORIO: "O valor unitário é obrigatório para este item.",
-      PACIENTE_JA_CADASTRADO: (nome) => `O paciente ${nome} já está cadastrado.`
     },
     SUCESSO: {
       ITENS_SALVOS: "Itens salvos com sucesso na calculadora!",
